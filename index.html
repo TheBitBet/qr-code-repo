@@ -29,8 +29,11 @@
 
         async function loadEntries() {
             try {
-                const response = await fetch('data.json');
+                const response = await fetch('data.json?timestamp=' + new Date().getTime());
+                if (!response.ok) throw new Error("Failed to load data.json");
                 const data = await response.json();
+                if (!Array.isArray(data)) throw new Error("Invalid JSON format");
+                
                 const list = document.getElementById('entriesList');
                 list.innerHTML = '';
                 data.forEach(entry => {
@@ -39,22 +42,25 @@
                     list.appendChild(item);
                 });
             } catch (error) {
-                console.error("Failed to load entries", error);
+                console.error("Failed to load entries:", error);
             }
         }
 
         async function feelingLucky() {
             try {
-                const response = await fetch('data.json');
+                const response = await fetch('data.json?timestamp=' + new Date().getTime());
+                if (!response.ok) throw new Error("Failed to load data.json");
                 const data = await response.json();
-                if (data.length > 0) {
-                    const randomEntry = data[Math.floor(Math.random() * data.length)];
-                    window.open(randomEntry.qrLink, '_blank');
-                } else {
+                if (!Array.isArray(data) || data.length === 0) {
                     alert("No entries available!");
+                    return;
                 }
+                
+                const randomEntry = data[Math.floor(Math.random() * data.length)];
+                window.open(randomEntry.qrLink, '_blank');
             } catch (error) {
-                console.error("Failed to fetch random entry", error);
+                console.error("Failed to fetch random entry:", error);
+                alert("Error fetching data. Check console for details.");
             }
         }
 
@@ -76,3 +82,4 @@
     <button onclick="feelingLucky()">Feeling Lucky</button>
 </body>
 </html>
+
