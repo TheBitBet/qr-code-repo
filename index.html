@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Repository</title>
+    <script>
+        async function submitEntry() {
+            const qrLink = document.getElementById('qrLink').value;
+            const location = document.getElementById('location').value;
+            const date = document.getElementById('date').value;
+            const note = document.getElementById('note').value;
+
+            if (!qrLink || !location) {
+                alert("QR Code Link and Location are required!");
+                return;
+            }
+
+            const entry = { qrLink, location, date, note };
+
+            const response = await fetch('submissions.json', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(entry)
+            });
+
+            if (response.ok) {
+                alert("Entry submitted successfully!");
+                document.getElementById('entryForm').reset();
+            } else {
+                alert("Failed to submit entry.");
+            }
+        }
+
+        async function loadEntries() {
+            try {
+                const response = await fetch('data.json');
+                const data = await response.json();
+                const list = document.getElementById('entriesList');
+                list.innerHTML = '';
+                data.forEach(entry => {
+                    const item = document.createElement('li');
+                    item.innerHTML = `<a href="${entry.qrLink}" target="_blank">${entry.qrLink}</a> - ${entry.location} (${entry.date || 'No date'}) - ${entry.note || 'No note'}`;
+                    list.appendChild(item);
+                });
+            } catch (error) {
+                console.error("Failed to load entries", error);
+            }
+        }
+
+        async function feelingLucky() {
+            try {
+                const response = await fetch('data.json');
+                const data = await response.json();
+                if (data.length > 0) {
+                    const randomEntry = data[Math.floor(Math.random() * data.length)];
+                    window.open(randomEntry.qrLink, '_blank');
+                } else {
+                    alert("No entries available!");
+                }
+            } catch (error) {
+                console.error("Failed to fetch random entry", error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadEntries);
+    </script>
+</head>
+<body>
+    <h2>QR Code Repository</h2>
+    <form id="entryForm" onsubmit="event.preventDefault(); submitEntry();">
+        <label>QR Code Link: <input type="url" id="qrLink" required></label><br>
+        <label>Location: <input type="text" id="location" required></label><br>
+        <label>Date: <input type="date" id="date"></label><br>
+        <label>Note: <textarea id="note"></textarea></label><br>
+        <button type="submit">Submit</button>
+    </form>
+    
+    <h2>Browse Entries</h2>
+    <ul id="entriesList"></ul>
+    <button onclick="feelingLucky()">Feeling Lucky</button>
+</body>
+</html>
