@@ -16,18 +16,45 @@
                 return;
             }
 
-            const entry = { qrLink, location, date, note };
+            const newEntry = { qrLink, location, date, note };
 
-            const response = await fetch('submissions.json', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(entry)
-            });
+            const GITHUB_USERNAME = "TheBitBet";  // Replace with your GitHub username
+            const REPO_NAME = "qr-code-repo";  // Replace with your repository name
+            const FILE_PATH = "submissions.json";
+            const TOKEN = "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";  // Replace with your GitHub token
 
-            if (response.ok) {
-                alert("Entry submitted successfully!");
-                document.getElementById('entryForm').reset();
-            } else {
+            try {
+                // Fetch current data
+                let response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${FILE_PATH}`);
+                let fileData = await response.json();
+                let content = JSON.parse(atob(fileData.content));
+
+                // Add new entry
+                content.push(newEntry);
+                let updatedContent = btoa(JSON.stringify(content, null, 2));
+
+                // Update file on GitHub
+                response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${FILE_PATH}`, {
+                    method: "PUT",
+                    headers: {
+                        "Authorization": `token ${TOKEN}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        message: "New QR code submission",
+                        content: updatedContent,
+                        sha: fileData.sha
+                    })
+                });
+
+                if (response.ok) {
+                    alert("Entry submitted successfully!");
+                    document.getElementById('entryForm').reset();
+                } else {
+                    alert("Failed to submit entry.");
+                }
+            } catch (error) {
+                console.error("Submission error:", error);
                 alert("Failed to submit entry.");
             }
         }
