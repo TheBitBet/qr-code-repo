@@ -1,0 +1,43 @@
+name: Process QR Code Submissions
+
+on:
+  push:
+    paths:
+      - "submissions.json"
+  workflow_dispatch: # Allows manual runs
+
+permissions:
+  contents: write
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Process new submissions
+        run: |
+          # Ensure the files exist
+          touch submissions.json data.json
+          echo "[]" > data.json  # Default empty JSON array if not present
+
+          # Merge submissions into data.json
+          jq -s '.[0] + .[1]' data.json submissions.json > merged.json
+          mv merged.json data.json
+          
+          # Clear the submissions.json file
+          echo "[]" > submissions.json
+
+      - name: Commit and push updates
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add data.json submissions.json
+          git commit -m "Update data.json with new submissions"
+          git push
