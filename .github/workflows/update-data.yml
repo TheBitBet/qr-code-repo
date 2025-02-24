@@ -1,0 +1,46 @@
+name: Update Data JSON
+
+on:
+  push:
+    paths:
+      - 'submissions.json'
+  schedule:
+    - cron: '*/15 * * * *'  # Runs every 15 minutes
+
+jobs:
+  update-json:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Process submissions
+        run: |
+          node <<EOF
+          const fs = require('fs');
+
+          let data = [];
+          if (fs.existsSync('data.json')) {
+            data = JSON.parse(fs.readFileSync('data.json', 'utf8'));
+          }
+
+          if (fs.existsSync('submissions.json')) {
+            const submissions = JSON.parse(fs.readFileSync('submissions.json', 'utf8'));
+            data = data.concat(submissions);
+            fs.writeFileSync('data.json', JSON.stringify(data, null, 2));
+            fs.writeFileSync('submissions.json', '[]');
+          }
+          EOF
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add data.json submissions.json
+          git commit -m "Update data.json with new submissions" || echo "No changes to commit"
+          git push
